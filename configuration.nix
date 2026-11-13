@@ -98,6 +98,7 @@
     kdePackages.kate
     kdePackages.kcalc
     yt-dlp
+    ffmpeg
     cryptomator
     brave
     # scid-vs-pc
