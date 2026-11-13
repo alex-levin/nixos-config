@@ -1,21 +1,50 @@
 # Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
+# your system. Help is available in the configuration.nix(5) man page, on
+# https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
 { config, pkgs, ... }:
 
-{
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+let
+  # Fetch nix-flatpak directly from GitHub
 
-  # Bootloader.
+
+  nix-flatpak = builtins.fetchTarball {
+    # Point directly to the tarball of the master/main branch (or a specific commit hash)
+    # url = "https://github.com/gmodena/nix-flatpak/archive/main.tar.gz";
+    url = "https://github.com/gmodena/nix-flatpak/archive/refs/tags/v0.8.0.tar.gz";
+    # Providing a sha256 makes builds reproducible and avoids re-downloading every time
+    # (If you don't know the hash yet, you can comment it out for a test run)
+    # sha256 = "";
+    sha256 = "0i99r0avr8qi3m9sdmj4dfs4amsk4bwm5kj5jfmv00pppcipziis";
+  };
+
+in
+{
+  imports = [
+    # Include the results of the hardware scan
+    ./hardware-configuration.nix
+
+    # Import the fetched nix-flatpak module
+    "${nix-flatpak}/modules/nixos.nix"
+  ];
+
+  # Enable the Flatpak service
+  services.flatpak.enable = true;
+
+  # Declare your Flatpak packages
+  services.flatpak.packages = [
+    "com.brave.Browser"
+    "org.cryptomator.Cryptomator"
+  ];
+
+  # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Sets the boot loader delay to 10 seconds
+  boot.loader.timeout = 10;
 
-  networking.hostName = "dell-desktop"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.hostName = "dell-xps"; # Define your hostname.
+  networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -23,6 +52,9 @@
 
   # Enable networking
   networking.networkmanager.enable = true;
+
+  # Enable firewall
+  networking.firewall.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/New_York";
@@ -43,11 +75,16 @@
   };
 
   # Enable the X11 windowing system.
-  services.xserver.enable = true;
+  # You can disable this if you're only using the Wayland session.
+  # services.xserver.enable = true;
 
-  # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  # KDE Plasma configuration
+  services.displayManager.sddm = {
+    enable = true;
+    theme = "breeze"; # Use the Breeze theme
+    wayland.enable = true; # Enable Wayland if needed
+  };
+  services.desktopManager.plasma6.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -67,24 +104,17 @@
     alsa.support32Bit = true;
     pulse.enable = true;
     # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
+    # jack.enable = true;
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
+  # services.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.alex = {
+  users.users."alex" = {
     isNormalUser = true;
     description = "Alex";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-    #  thunderbird
-    ];
   };
 
   # Install firefox.
@@ -93,21 +123,49 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
+  # List packages installed in system profile.
+  # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-      google-chrome
-      veracrypt
-      scid-vs-pc
-      vscode
-      onlyoffice-desktopeditors
-      gnome-tweaks
-      htop
-      yt-dlp
-      git
+  # vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+  # wget
+    htop
+    fastfetch
+    wget
+    git
+    kdePackages.kate
+    kdePackages.kcalc
+    yt-dlp
+    # scid-vs-pc
+    # veracrypt
+    # onlyoffice-desktopeditors
+    # gnome-tweaks
+    # google-chrome
   ];
+
+  # Auto system update
+  # system.autoUpgrade = {
+    # enable = true;
+  # };
+
+  # Automatic Old Generations cleanup
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
+  };
+  boot.loader.systemd-boot.configurationLimit = 5;
+
+  # Zram
+  zramSwap = {
+    enable = true;
+    priority = 100;
+    algorithm = "lz4";
+    memoryPercent = 50;
+  };
+
+  # Reduce swappiness
+  # boot.kernel.sysctl = { "vm.swappiness" = 10;};
+
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -128,37 +186,28 @@
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
 
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
+  # Copy the NixOS configuration file and link it from the resulting system
+  # (/run/current-system/configuration.nix). This is useful in case you
+  # accidentally delete configuration.nix.
+  # system.copySystemConfiguration = true;
 
-	# Auto system update
-	# system.autoUpgrade = {
-  #     enable = true;
-	# };
-	
-	# Automatic Garbage Collection
-	# nix.gc = {
-	#  	automatic = true;
-  #       dates = "weekly";
-  #       options = "--delete-older-than 7d";
-  # };
-    
-  # Reduce swappiness
-  boot.kernel.sysctl = { "vm.swappiness" = 10;};
-  
-  programs.git = {
-    enable = true;  # Enable Git
-    config = {
-      user.name = "alex-levin";  # Set your name
-      user.email = "alex@email.com";  # Set your email
-      # init.defaultBranch = "main";  # Set default branch name
-      # push.autoSetupRemote = true;  # Automatically set up remote for new branches
-    };
-  };
+  # This option defines the first version of NixOS you have installed on this particular machine,
+  # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
+  #
+  # Most users should NEVER change this value after the initial install, for any reason,
+  # even if you've upgraded your system to a new NixOS release.
+  #
+  # This value does NOT affect the Nixpkgs version your packages and OS are pulled from,
+  # so changing it will NOT upgrade your system - see https://nixos.org/manual/nixos/stable/#sec-upgrading for how
+  # to actually do that.
+  #
+  # This value being lower than the current NixOS release does NOT mean your system is
+  # out of date, out of support, or vulnerable.
+  #
+  # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
+  # and migrated your data accordingly.
+  #
+  # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
+  system.stateVersion = "26.05"; # Did you read the comment?
 
 }
