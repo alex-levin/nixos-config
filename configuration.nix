@@ -113,13 +113,35 @@
   #   enable = true;
   # };
 
-  # Automatic Old Generations cleanup
+  # 1. Stage system and app updates quietly for your next reboot
+  system.autoUpgrade = {
+    enable = true;
+    operation = "boot";
+    dates = "weekly";
+    randomizedDelaySec = "15min";
+    persistent = true;
+  };
+
+
+  # Deletes old system generations
   nix.gc = {
     automatic = true;
     dates = "weekly";
     options = "--delete-older-than 5d";
   };
   boot.loader.systemd-boot.configurationLimit = 5;
+
+  # Deduplicate identical files in /nix/store
+  nix.optimise = {
+    automatic = true;
+    dates = [ "weekly" ];
+  };
+
+  # Firmware update
+  services.fwupd.enable = true;
+
+  # Automatic Cleanup of Temporary Files
+  boot.tmp.cleanOnBoot = true
 
   # Zram
   zramSwap = {
