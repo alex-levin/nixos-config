@@ -108,11 +108,6 @@
     # google-chrome
   ];
 
-  # Auto system update
-  # system.autoUpgrade = {
-  #   enable = true;
-  # };
-
   # 1. Stage system and app updates quietly for your next reboot
   system.autoUpgrade = {
     enable = true;
@@ -141,7 +136,7 @@
   services.fwupd.enable = true;
 
   # Automatic Cleanup of Temporary Files
-  boot.tmp.cleanOnBoot = true
+  boot.tmp.cleanOnBoot = true;
 
   # Zram
   zramSwap = {
