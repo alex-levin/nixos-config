@@ -14,7 +14,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "dell-desktop"; # Define your hostname.
+  networking.hostName = "dell-xps"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -42,13 +42,9 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable the X11 windowing system.
-  # You can disable this if you're only using the Wayland session.
-  services.xserver.enable = true;
-
-  # Enable the KDE Plasma Desktop Environment.
-  services.displayManager.sddm.enable = true;
-  services.desktopManager.plasma6.enable = true;
+  # Enable the GNOME Desktop Environment.
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -79,10 +75,13 @@
     isNormalUser = true;
     description = "Alex";
     extraGroups = [ "networkmanager" "wheel" ];
+    packages = with pkgs; [
+    #  thunderbird
+    ];
   };
 
   # Install firefox.
-  # programs.firefox.enable = true;
+  programs.firefox.enable = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -90,13 +89,10 @@
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-  #   vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     htop
     fastfetch
     wget
     git
-    kdePackages.kate
-    kdePackages.kcalc
     yt-dlp
     ffmpeg
     cryptomator
@@ -104,11 +100,11 @@
     # scid-vs-pc
     # veracrypt
     # onlyoffice-desktopeditors
-    # gnome-tweaks
+    gnome-tweaks
     # google-chrome
   ];
-
-  # 1. Stage system and app updates quietly for your next reboot
+  
+  # Stage system and app updates quietly for your next reboot
   system.autoUpgrade = {
     enable = true;
     operation = "boot";
@@ -116,7 +112,6 @@
     randomizedDelaySec = "15min";
     persistent = true;
   };
-
 
   # Deletes old system generations
   nix.gc = {
@@ -147,7 +142,7 @@
   };
 
   # Reduce swappiness
-  # boot.kernel.sysctl = { "vm.swappiness" = 10;};
+  # boot.kernel.sysctl = { "vm.swappiness" = 10;};  
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -171,7 +166,7 @@
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
-  system.copySystemConfiguration = true;
+  # system.copySystemConfiguration = true;
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
