@@ -14,7 +14,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "dell-xps"; # Define your hostname.
+  networking.hostName = "dell-desktop"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -104,6 +104,11 @@
     # google-chrome
   ];
   
+  # Run fastfetch whenever an interactive Bash shell starts
+  programs.bash.interactiveShellInit = ''
+    fastfetch
+  '';
+  
   # Stage system and app updates quietly for your next reboot
   system.autoUpgrade = {
     enable = true;
@@ -117,8 +122,10 @@
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 7d";
+    options = "--delete-older-than 5d";
+    persistent = true;
   };
+
   boot.loader.systemd-boot.configurationLimit = 5;
 
   # Deduplicate identical files in /nix/store
@@ -140,7 +147,7 @@
     algorithm = "lz4";
     memoryPercent = 50;
   };
-
+  
   # Reduce swappiness
   # boot.kernel.sysctl = { "vm.swappiness" = 10;};  
 
