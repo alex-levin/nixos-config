@@ -122,7 +122,7 @@
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 5d";
+    options = "--delete-older-than 7d";
     persistent = true;
   };
 
